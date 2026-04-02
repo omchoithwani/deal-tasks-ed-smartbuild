@@ -1,0 +1,14 @@
+{
+  "name": "deal-tasks-ed-smartbuild",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Weekly HubSpot task digest email for deals",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@hubspot/api-client": "^11.2.0",
+    "dotenv": "^16.4.5",
+    "resend": "^3.5.0"
+  }
+}

@@ -3,6 +3,7 @@ import { Client } from '@hubspot/api-client';
 const hubspot = new Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN });
 
 const PROPOSAL_PROPERTY = process.env.HUBSPOT_PROPOSAL_PROPERTY || 'proposal_submission_date';
+const OWNER_ID = process.env.HUBSPOT_OWNER_ID || '1517615118';
 
 /**
  * Returns Monday 00:00:00 UTC and Sunday 23:59:59 UTC for the current week.
@@ -51,10 +52,15 @@ export async function getTasksDueThisWeek() {
               operator: 'LTE',
               value: String(end.getTime()),
             },
+            {
+              propertyName: 'hubspot_owner_id',
+              operator: 'EQ',
+              value: OWNER_ID,
+            },
           ],
         },
       ],
-      properties: ['hs_task_subject', 'hs_task_status', 'hs_timestamp', 'hs_task_body'],
+      properties: ['hs_task_subject', 'hs_task_status', 'hs_timestamp', 'hs_task_body', 'hubspot_owner_id'],
       limit: 100,
       after,
     });

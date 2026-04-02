@@ -40,7 +40,7 @@ async function main() {
     }
 
     const dealProps = await getDealDetails(dealId);
-    const note = await getRelevantNote(dealId);
+    const notes = await getRelevantNote(dealId);
 
     taskRecords.push({
       task: {
@@ -54,7 +54,7 @@ async function main() {
         amount: dealProps.amount,
         proposalSubmitted: dealProps[PROPOSAL_PROPERTY],
       },
-      note,
+      notes,
     });
   }
 

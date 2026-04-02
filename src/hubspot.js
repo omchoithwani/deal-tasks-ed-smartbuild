@@ -132,11 +132,23 @@ export async function getRelevantNote(dealId) {
     (a, b) => Number(b.properties.hs_timestamp) - Number(a.properties.hs_timestamp),
   );
 
-  if (notes.length === 0) return null;
+  if (notes.length === 0) return { latestNote: null, edNote: null };
 
-  const edNote = notes.find((n) =>
+  const latest = notes[0];
+  const edMatch = notes.find((n) =>
     /ed'?s\s*note/i.test(n.properties.hs_note_body ?? ''),
   );
 
-  return (edNote ?? notes[0]).properties.hs_note_body ?? null;
+  return {
+    latestNote: {
+      body: latest.properties.hs_note_body ?? null,
+      date: latest.properties.hs_timestamp ?? null,
+    },
+    edNote: edMatch
+      ? {
+          body: edMatch.properties.hs_note_body ?? null,
+          date: edMatch.properties.hs_timestamp ?? null,
+        }
+      : null,
+  };
 }

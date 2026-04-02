@@ -31,7 +31,11 @@ export function buildText(taskRecords, weekLabel) {
   const lines = [`Weekly Task Digest — Week of ${weekLabel}`, ''];
 
   taskRecords.forEach((record, i) => {
-    const { task, deal, note } = record;
+    const { task, deal, notes } = record;
+    const latestBody = notes?.latestNote ? stripHtml(notes.latestNote.body) : null;
+    const latestDate = notes?.latestNote ? formatDate(notes.latestNote.date) : null;
+    const edBody = notes?.edNote ? stripHtml(notes.edNote.body) : null;
+    const edDate = notes?.edNote ? formatDate(notes.edNote.date) : null;
     lines.push(`Task ${i + 1}`);
     lines.push('─'.repeat(40));
     lines.push(`Deal Name:          ${deal.dealname ?? 'N/A'}`);
@@ -39,7 +43,8 @@ export function buildText(taskRecords, weekLabel) {
     lines.push(`Amount:             ${formatAmount(deal.amount)}`);
     lines.push(`Proposal Submitted: ${formatDate(deal.proposalSubmitted)}`);
     lines.push(`Task Name:          ${task.subject ?? 'N/A'}`);
-    lines.push(`Last Note:          ${stripHtml(note) || 'No notes found'}`);
+    lines.push(`Latest Note (${latestDate ?? 'N/A'}): ${latestBody || 'No notes found'}`);
+    lines.push(`Ed's Note (${edDate ?? 'N/A'}):    ${edBody || 'None found'}`);
     lines.push('');
   });
 
@@ -52,7 +57,12 @@ export function buildText(taskRecords, weekLabel) {
 export function buildHtml(taskRecords, weekLabel) {
   const rows = taskRecords
     .map(
-      ({ task, deal, note }, i) => `
+      ({ task, deal, notes }, i) => {
+        const latestBody = notes?.latestNote ? stripHtml(notes.latestNote.body) : null;
+        const latestDate = notes?.latestNote ? formatDate(notes.latestNote.date) : null;
+        const edBody = notes?.edNote ? stripHtml(notes.edNote.body) : null;
+        const edDate = notes?.edNote ? formatDate(notes.edNote.date) : null;
+        return `
       <div style="margin-bottom:32px;padding:20px;border:1px solid #e0e0e0;border-radius:8px;font-family:sans-serif;">
         <h2 style="margin:0 0 16px;font-size:16px;color:#333;">Task ${i + 1}</h2>
         <table style="border-collapse:collapse;width:100%;font-size:14px;color:#444;">
@@ -77,11 +87,22 @@ export function buildHtml(taskRecords, weekLabel) {
             <td style="padding:6px 0;">${task.subject ?? 'N/A'}</td>
           </tr>
           <tr style="background:#fafafa;">
-            <td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap;vertical-align:top;color:#555;">Last Note</td>
-            <td style="padding:6px 0;color:#555;font-style:italic;">${stripHtml(note) || 'No notes found'}</td>
+            <td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap;vertical-align:top;color:#555;">Latest Note</td>
+            <td style="padding:6px 0;color:#555;">
+              <span style="font-size:12px;color:#888;">${latestDate ?? 'N/A'}</span><br>
+              <span style="font-style:italic;">${latestBody || 'No notes found'}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap;vertical-align:top;color:#555;">Ed's Note</td>
+            <td style="padding:6px 0;color:#555;">
+              <span style="font-size:12px;color:#888;">${edDate ?? 'N/A'}</span><br>
+              <span style="font-style:italic;">${edBody || 'None found'}</span>
+            </td>
           </tr>
         </table>
-      </div>`,
+      </div>`;
+      },
     )
     .join('');
 

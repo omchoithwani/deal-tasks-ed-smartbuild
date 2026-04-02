@@ -34,8 +34,10 @@ export function buildText(taskRecords, weekLabel) {
     const { task, deal, notes } = record;
     const latestBody = notes?.latestNote ? stripHtml(notes.latestNote.body) : null;
     const latestDate = notes?.latestNote ? formatDate(notes.latestNote.date) : null;
+    const latestBy = notes?.latestNote?.addedBy ?? null;
     const edBody = notes?.edNote ? stripHtml(notes.edNote.body) : null;
     const edDate = notes?.edNote ? formatDate(notes.edNote.date) : null;
+    const edBy = notes?.edNote?.addedBy ?? null;
     lines.push(`Task ${i + 1}`);
     lines.push('─'.repeat(40));
     lines.push(`Deal Name:          ${deal.dealname ?? 'N/A'}`);
@@ -43,8 +45,8 @@ export function buildText(taskRecords, weekLabel) {
     lines.push(`Amount:             ${formatAmount(deal.amount)}`);
     lines.push(`Proposal Submitted: ${formatDate(deal.proposalSubmitted)}`);
     lines.push(`Task Name:          ${task.subject ?? 'N/A'}`);
-    lines.push(`Latest Note (${latestDate ?? 'N/A'}): ${latestBody || 'No notes found'}`);
-    lines.push(`Ed's Note (${edDate ?? 'N/A'}):    ${edBody || 'None found'}`);
+    lines.push(`Latest Note (${latestDate ?? 'N/A'}${latestBy ? `, ${latestBy}` : ''}): ${latestBody || 'No notes found'}`);
+    lines.push(`Ed's Note (${edDate ?? 'N/A'}${edBy ? `, ${edBy}` : ''}):    ${edBody || 'None found'}`);
     lines.push('');
   });
 
@@ -60,8 +62,10 @@ export function buildHtml(taskRecords, weekLabel) {
       ({ task, deal, notes }, i) => {
         const latestBody = notes?.latestNote ? stripHtml(notes.latestNote.body) : null;
         const latestDate = notes?.latestNote ? formatDate(notes.latestNote.date) : null;
+        const latestBy = notes?.latestNote?.addedBy ?? null;
         const edBody = notes?.edNote ? stripHtml(notes.edNote.body) : null;
         const edDate = notes?.edNote ? formatDate(notes.edNote.date) : null;
+        const edBy = notes?.edNote?.addedBy ?? null;
         return `
       <div style="margin-bottom:32px;padding:20px;border:1px solid #e0e0e0;border-radius:8px;font-family:sans-serif;">
         <h2 style="margin:0 0 16px;font-size:16px;color:#333;">Task ${i + 1}</h2>
@@ -89,14 +93,14 @@ export function buildHtml(taskRecords, weekLabel) {
           <tr style="background:#fafafa;">
             <td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap;vertical-align:top;color:#555;">Latest Note</td>
             <td style="padding:6px 0;color:#555;">
-              <span style="font-size:12px;color:#888;">${latestDate ?? 'N/A'}</span><br>
+              <span style="font-size:12px;color:#888;">${latestDate ?? 'N/A'}${latestBy ? ` &mdash; ${latestBy}` : ''}</span><br>
               <span style="font-style:italic;">${latestBody || 'No notes found'}</span>
             </td>
           </tr>
           <tr>
             <td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap;vertical-align:top;color:#555;">Ed's Note</td>
             <td style="padding:6px 0;color:#555;">
-              <span style="font-size:12px;color:#888;">${edDate ?? 'N/A'}</span><br>
+              <span style="font-size:12px;color:#888;">${edDate ?? 'N/A'}${edBy ? ` &mdash; ${edBy}` : ''}</span><br>
               <span style="font-style:italic;">${edBody || 'None found'}</span>
             </td>
           </tr>

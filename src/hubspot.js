@@ -125,7 +125,7 @@ export async function getRelevantNote(dealId) {
   // Batch-read note properties (up to 20)
   const batchResponse = await hubspot.crm.objects.batchApi.read('notes', {
     inputs: noteIds.slice(0, 20).map((id) => ({ id: String(id) })),
-    properties: ['hs_note_body', 'hs_timestamp'],
+    properties: ['hs_note_body', 'hs_timestamp', 'hubspot_owner_id'],
   });
 
   const notes = (batchResponse.results ?? []).sort(
@@ -139,16 +139,30 @@ export async function getRelevantNote(dealId) {
     /ed'?s\s*note/i.test(n.properties.hs_note_body ?? ''),
   );
 
+  // Fetch owner names for the relevant notes (deduplicated)
+  const ownerIds = [...new Set(
+    [latest, edMatch].filter(Boolean).map((n) => n.properties.hubspot_owner_id).filter(Boolean),
+  )];
+  const ownerMap = {};
+  await Promise.all(
+    ownerIds.map(async (id) => {
+      try {
+        const owner = await hubspot.crm.owners.ownersApi.getById(Number(id));
+        ownerMap[id] = [owner.firstName, owner.lastName].filter(Boolean).join(' ') || owner.email || id;
+      } catch {
+        ownerMap[id] = id;
+      }
+    }),
+  );
+
+  const noteToObj = (n) => ({
+    body: n.properties.hs_note_body ?? null,
+    date: n.properties.hs_timestamp ?? null,
+    addedBy: ownerMap[n.properties.hubspot_owner_id] ?? null,
+  });
+
   return {
-    latestNote: {
-      body: latest.properties.hs_note_body ?? null,
-      date: latest.properties.hs_timestamp ?? null,
-    },
-    edNote: edMatch
-      ? {
-          body: edMatch.properties.hs_note_body ?? null,
-          date: edMatch.properties.hs_timestamp ?? null,
-        }
-      : null,
+    latestNote: noteToObj(latest),
+    edNote: edMatch ? noteToObj(edMatch) : null,
   };
 }

@@ -107,24 +107,31 @@ export async function getDealDetails(dealId) {
  * Returns the most recent note that contains "Ed's Note", or the most recent note overall.
  */
 export async function getRelevantNote(dealId) {
-  const response = await hubspot.crm.objects.searchApi.doSearch('notes', {
-    filterGroups: [
-      {
-        filters: [
-          {
-            propertyName: 'associations.dealId',
-            operator: 'EQ',
-            value: String(dealId),
-          },
-        ],
-      },
-    ],
+  // Get note IDs associated with the deal via the associations API
+  let assocResponse;
+  try {
+    assocResponse = await hubspot.crm.associations.v4.basicApi.getPage(
+      'deals',
+      dealId,
+      'notes',
+    );
+  } catch {
+    return null;
+  }
+
+  const noteIds = (assocResponse.results ?? []).map((r) => r.toObjectId);
+  if (noteIds.length === 0) return null;
+
+  // Batch-read note properties (up to 20)
+  const batchResponse = await hubspot.crm.objects.batchApi.read('notes', {
+    inputs: noteIds.slice(0, 20).map((id) => ({ id: String(id) })),
     properties: ['hs_note_body', 'hs_timestamp'],
-    sorts: [{ propertyName: 'hs_timestamp', direction: 'DESCENDING' }],
-    limit: 20,
   });
 
-  const notes = response.results ?? [];
+  const notes = (batchResponse.results ?? []).sort(
+    (a, b) => Number(b.properties.hs_timestamp) - Number(a.properties.hs_timestamp),
+  );
+
   if (notes.length === 0) return null;
 
   const edNote = notes.find((n) =>

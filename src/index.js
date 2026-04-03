@@ -42,6 +42,18 @@ async function main() {
     const dealProps = await getDealDetails(dealId);
     const notes = await getRelevantNote(dealId);
 
+    console.log(`  Deal: ${dealProps.dealname} (${dealId})`);
+    if (notes.latestNote) {
+      console.log(`    Latest note date: ${notes.latestNote.date} | by: ${notes.latestNote.addedBy} | preview: ${String(notes.latestNote.body ?? '').slice(0, 80)}`);
+    } else {
+      console.log(`    Latest note: none`);
+    }
+    if (notes.edNote) {
+      console.log(`    Ed's note date:   ${notes.edNote.date} | by: ${notes.edNote.addedBy} | preview: ${String(notes.edNote.body ?? '').slice(0, 80)}`);
+    } else {
+      console.log(`    Ed's note: none`);
+    }
+
     taskRecords.push({
       task: {
         subject: task.properties.hs_task_subject,

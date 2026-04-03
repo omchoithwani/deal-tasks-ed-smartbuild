@@ -5,6 +5,26 @@ const hubspot = new Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN });
 const PROPOSAL_PROPERTY = process.env.HUBSPOT_PROPOSAL_PROPERTY || 'proposal_submission_date';
 const OWNER_ID = process.env.HUBSPOT_OWNER_ID || '1517615118';
 
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
+/**
+ * Retry a HubSpot API call on transient errors (502, 503, 429) with exponential backoff.
+ */
+async function withRetry(fn, retries = 4, delayMs = 1000) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const code = err.code ?? err.statusCode;
+      const transient = [429, 502, 503, 504].includes(code);
+      if (!transient || attempt === retries) throw err;
+      const wait = delayMs * 2 ** attempt;
+      console.warn(`  HubSpot ${code} — retrying in ${wait}ms (attempt ${attempt + 1}/${retries})`);
+      await sleep(wait);
+    }
+  }
+}
+
 /**
  * Returns Monday 00:00:00 UTC and Sunday 23:59:59 UTC for the current week.
  */
@@ -33,7 +53,7 @@ export async function getTasksDueThisWeek() {
   let after = undefined;
 
   do {
-    const response = await hubspot.crm.objects.searchApi.doSearch('tasks', {
+    const response = await withRetry(() => hubspot.crm.objects.searchApi.doSearch('tasks', {
       filterGroups: [
         {
           filters: [
@@ -63,7 +83,7 @@ export async function getTasksDueThisWeek() {
       properties: ['hs_task_subject', 'hs_task_status', 'hs_timestamp', 'hs_task_body', 'hubspot_owner_id'],
       limit: 100,
       after,
-    });
+    }));
 
     tasks.push(...response.results);
     after = response.paging?.next?.after;
@@ -77,10 +97,8 @@ export async function getTasksDueThisWeek() {
  */
 export async function getAssociatedDealId(taskId) {
   try {
-    const response = await hubspot.crm.associations.v4.basicApi.getPage(
-      'tasks',
-      taskId,
-      'deals',
+    const response = await withRetry(() =>
+      hubspot.crm.associations.v4.basicApi.getPage('tasks', taskId, 'deals'),
     );
     const results = response.results ?? [];
     return results.length > 0 ? results[0].toObjectId : null;
@@ -93,12 +111,14 @@ export async function getAssociatedDealId(taskId) {
  * Fetch deal properties for a given deal ID.
  */
 export async function getDealDetails(dealId) {
-  const response = await hubspot.crm.deals.basicApi.getById(dealId, [
-    'dealname',
-    'description',
-    'amount',
-    PROPOSAL_PROPERTY,
-  ]);
+  const response = await withRetry(() =>
+    hubspot.crm.deals.basicApi.getById(dealId, [
+      'dealname',
+      'description',
+      'amount',
+      PROPOSAL_PROPERTY,
+    ]),
+  );
   return response.properties;
 }
 
@@ -112,12 +132,8 @@ export async function getRelevantNote(dealId) {
   let after = undefined;
   try {
     do {
-      const page = await hubspot.crm.associations.v4.basicApi.getPage(
-        'deals',
-        dealId,
-        'notes',
-        undefined,
-        after,
+      const page = await withRetry(() =>
+        hubspot.crm.associations.v4.basicApi.getPage('deals', dealId, 'notes', after),
       );
       noteIds.push(...(page.results ?? []).map((r) => r.toObjectId));
       after = page.paging?.next?.after;
@@ -132,10 +148,12 @@ export async function getRelevantNote(dealId) {
   const allNotes = [];
   for (let i = 0; i < noteIds.length; i += 100) {
     const chunk = noteIds.slice(i, i + 100);
-    const batchResponse = await hubspot.crm.objects.batchApi.read('notes', {
-      inputs: chunk.map((id) => ({ id: String(id) })),
-      properties: ['hs_note_body', 'hs_timestamp', 'hs_createdate', 'hubspot_owner_id'],
-    });
+    const batchResponse = await withRetry(() =>
+      hubspot.crm.objects.batchApi.read('notes', {
+        inputs: chunk.map((id) => ({ id: String(id) })),
+        properties: ['hs_note_body', 'hs_timestamp', 'hs_createdate', 'hubspot_owner_id'],
+      }),
+    );
     allNotes.push(...(batchResponse.results ?? []));
   }
 
@@ -159,7 +177,7 @@ export async function getRelevantNote(dealId) {
   await Promise.all(
     ownerIds.map(async (id) => {
       try {
-        const owner = await hubspot.crm.owners.ownersApi.getById(Number(id));
+        const owner = await withRetry(() => hubspot.crm.owners.ownersApi.getById(Number(id)));
         ownerMap[id] = [owner.firstName, owner.lastName].filter(Boolean).join(' ') || owner.email || id;
       } catch {
         ownerMap[id] = id;

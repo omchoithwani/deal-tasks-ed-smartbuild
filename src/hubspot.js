@@ -164,10 +164,12 @@ export async function getRelevantNote(dealId) {
 
   if (notes.length === 0) return { latestNote: null, edNote: null };
 
-  const latest = notes[0];
   const edMatch = notes.find((n) =>
     /ed'?s\s*note/i.test(n.properties.hs_note_body ?? ''),
   );
+  const latest = notes.find((n) =>
+    !/ed'?s\s*note/i.test(n.properties.hs_note_body ?? ''),
+  ) ?? notes[0]; // fallback to most recent if all notes are Ed's notes
 
   // Fetch owner names for the relevant notes (deduplicated)
   const ownerIds = [...new Set(

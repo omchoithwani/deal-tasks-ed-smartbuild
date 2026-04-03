@@ -2,7 +2,7 @@ name: Weekly Task Digest Email
 
 on:
   schedule:
-    - cron: '0 13 * * 1'  # Every Monday at 8:00am EST (UTC-5)
+    - cron: '30 21 * * 5'  # Every Friday at 4:30pm EST (UTC-5)
   workflow_dispatch:        # Allow manual trigger from GitHub UI
 
 jobs:

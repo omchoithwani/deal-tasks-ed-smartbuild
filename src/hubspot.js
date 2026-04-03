@@ -107,28 +107,39 @@ export async function getDealDetails(dealId) {
  * Returns the most recent note that contains "Ed's Note", or the most recent note overall.
  */
 export async function getRelevantNote(dealId) {
-  // Get note IDs associated with the deal via the associations API
-  let assocResponse;
+  // Get ALL note IDs associated with the deal (paginate through associations)
+  let noteIds = [];
+  let after = undefined;
   try {
-    assocResponse = await hubspot.crm.associations.v4.basicApi.getPage(
-      'deals',
-      dealId,
-      'notes',
-    );
+    do {
+      const page = await hubspot.crm.associations.v4.basicApi.getPage(
+        'deals',
+        dealId,
+        'notes',
+        undefined,
+        after,
+      );
+      noteIds.push(...(page.results ?? []).map((r) => r.toObjectId));
+      after = page.paging?.next?.after;
+    } while (after);
   } catch {
-    return null;
+    return { latestNote: null, edNote: null };
   }
 
-  const noteIds = (assocResponse.results ?? []).map((r) => r.toObjectId);
-  if (noteIds.length === 0) return null;
+  if (noteIds.length === 0) return { latestNote: null, edNote: null };
 
-  // Batch-read note properties (up to 20)
-  const batchResponse = await hubspot.crm.objects.batchApi.read('notes', {
-    inputs: noteIds.slice(0, 20).map((id) => ({ id: String(id) })),
-    properties: ['hs_note_body', 'hs_timestamp', 'hubspot_owner_id'],
-  });
+  // Batch-read all notes in chunks of 100 (HubSpot batch API limit)
+  const allNotes = [];
+  for (let i = 0; i < noteIds.length; i += 100) {
+    const chunk = noteIds.slice(i, i + 100);
+    const batchResponse = await hubspot.crm.objects.batchApi.read('notes', {
+      inputs: chunk.map((id) => ({ id: String(id) })),
+      properties: ['hs_note_body', 'hs_timestamp', 'hubspot_owner_id'],
+    });
+    allNotes.push(...(batchResponse.results ?? []));
+  }
 
-  const notes = (batchResponse.results ?? []).sort(
+  const notes = allNotes.sort(
     (a, b) => Number(b.properties.hs_timestamp) - Number(a.properties.hs_timestamp),
   );
 

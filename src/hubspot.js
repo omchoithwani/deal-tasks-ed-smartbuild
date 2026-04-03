@@ -134,13 +134,14 @@ export async function getRelevantNote(dealId) {
     const chunk = noteIds.slice(i, i + 100);
     const batchResponse = await hubspot.crm.objects.batchApi.read('notes', {
       inputs: chunk.map((id) => ({ id: String(id) })),
-      properties: ['hs_note_body', 'hs_timestamp', 'hubspot_owner_id'],
+      properties: ['hs_note_body', 'hs_timestamp', 'hs_createdate', 'hubspot_owner_id'],
     });
     allNotes.push(...(batchResponse.results ?? []));
   }
 
+  // Sort by hs_createdate (actual creation time) — hs_timestamp is user-editable and can be backdated
   const notes = allNotes.sort(
-    (a, b) => Number(b.properties.hs_timestamp) - Number(a.properties.hs_timestamp),
+    (a, b) => Number(new Date(b.properties.hs_createdate)) - Number(new Date(a.properties.hs_createdate)),
   );
 
   if (notes.length === 0) return { latestNote: null, edNote: null };
@@ -168,7 +169,7 @@ export async function getRelevantNote(dealId) {
 
   const noteToObj = (n) => ({
     body: n.properties.hs_note_body ?? null,
-    date: n.properties.hs_timestamp ?? null,
+    date: n.properties.hs_createdate ?? null,
     addedBy: ownerMap[n.properties.hubspot_owner_id] ?? null,
   });
 

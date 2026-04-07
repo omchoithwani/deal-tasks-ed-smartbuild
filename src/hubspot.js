@@ -26,28 +26,53 @@ async function withRetry(fn, retries = 4, delayMs = 1000) {
 }
 
 /**
- * Returns the date range to query tasks for.
+ * Returns the UTC time for midnight (start) or 23:59:59.999 (end) of a date
+ * in America/New_York, correctly handling both EST (UTC-5) and EDT (UTC-4).
+ */
+function easternDayStart(dateStr) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const noon = new Date(Date.UTC(year, month - 1, day, 12));
+  const easternHour = parseInt(
+    new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(noon),
+  );
+  const offsetHours = 12 - easternHour; // 4 for EDT, 5 for EST
+  return new Date(Date.UTC(year, month - 1, day, offsetHours, 0, 0, 0));
+}
+
+function easternDayEnd(dateStr) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const noon = new Date(Date.UTC(year, month - 1, day, 12));
+  const easternHour = parseInt(
+    new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(noon),
+  );
+  const offsetHours = 12 - easternHour;
+  return new Date(Date.UTC(year, month - 1, day + 1, offsetHours, 0, 0, 0) - 1);
+}
+
+/**
+ * Returns the date range to query tasks for in Eastern time.
  * Uses DATE_FROM / DATE_TO env vars if provided, otherwise defaults to the current week.
  */
 export function getWeekRange() {
   if (process.env.DATE_FROM && process.env.DATE_TO) {
-    const start = new Date(process.env.DATE_FROM + 'T00:00:00.000Z');
-    const end = new Date(process.env.DATE_TO + 'T23:59:59.999Z');
-    return { start, end };
+    return {
+      start: easternDayStart(process.env.DATE_FROM),
+      end: easternDayEnd(process.env.DATE_TO),
+    };
   }
 
-  const now = new Date();
-  const day = now.getUTCDay();
-  const diffToMonday = (day === 0 ? -6 : 1 - day);
-  const monday = new Date(now);
-  monday.setUTCDate(now.getUTCDate() + diffToMonday);
-  monday.setUTCHours(0, 0, 0, 0);
+  // Get today's date string in Eastern time (en-CA = YYYY-MM-DD format)
+  const todayEastern = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const [y, m, d] = todayEastern.split('-').map(Number);
+  const dow = new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay(); // day of week (noon UTC = same day Eastern)
+  const diffToMonday = (dow === 0 ? -6 : 1 - dow);
 
-  const sunday = new Date(monday);
-  sunday.setUTCDate(monday.getUTCDate() + 6);
-  sunday.setUTCHours(23, 59, 59, 999);
+  const mondayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
+    .format(new Date(Date.UTC(y, m - 1, d + diffToMonday, 12)));
+  const sundayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
+    .format(new Date(Date.UTC(y, m - 1, d + diffToMonday + 6, 12)));
 
-  return { start: monday, end: sunday };
+  return { start: easternDayStart(mondayStr), end: easternDayEnd(sundayStr) };
 }
 
 /**

@@ -68,9 +68,9 @@ export function getWeekRange() {
   const diffToMonday = (dow === 0 ? -6 : 1 - dow);
 
   const mondayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
-    .format(new Date(Date.UTC(y, m - 1, d + diffToMonday, 12)));
+    .format(new Date(Date.UTC(y, m - 1, d + diffToMonday + 7, 12)));
   const sundayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
-    .format(new Date(Date.UTC(y, m - 1, d + diffToMonday + 6, 12)));
+    .format(new Date(Date.UTC(y, m - 1, d + diffToMonday + 13, 12)));
 
   return { start: easternDayStart(mondayStr), end: easternDayEnd(sundayStr) };
 }

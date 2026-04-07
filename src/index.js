@@ -11,18 +11,14 @@ import { sendDigest } from './email.js';
 
 const PROPOSAL_PROPERTY = process.env.HUBSPOT_PROPOSAL_PROPERTY || 'proposal_submission_date';
 
-function weekLabel(start) {
-  return start.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
+function dateLabel(d) {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
 async function main() {
-  const { start } = getWeekRange();
-  const label = weekLabel(start);
+  const { start, end } = getWeekRange();
+  const isCustomRange = !!(process.env.DATE_FROM && process.env.DATE_TO);
+  const label = isCustomRange ? `${dateLabel(start)} – ${dateLabel(end)}` : dateLabel(start);
   console.log(`Fetching tasks due week of ${label}...`);
 
   const tasks = await getTasksDueThisWeek();

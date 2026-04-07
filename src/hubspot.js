@@ -26,11 +26,18 @@ async function withRetry(fn, retries = 4, delayMs = 1000) {
 }
 
 /**
- * Returns Monday 00:00:00 UTC and Sunday 23:59:59 UTC for the current week.
+ * Returns the date range to query tasks for.
+ * Uses DATE_FROM / DATE_TO env vars if provided, otherwise defaults to the current week.
  */
 export function getWeekRange() {
+  if (process.env.DATE_FROM && process.env.DATE_TO) {
+    const start = new Date(process.env.DATE_FROM + 'T00:00:00.000Z');
+    const end = new Date(process.env.DATE_TO + 'T23:59:59.999Z');
+    return { start, end };
+  }
+
   const now = new Date();
-  const day = now.getUTCDay(); // 0 = Sunday, 1 = Monday, ...
+  const day = now.getUTCDay();
   const diffToMonday = (day === 0 ? -6 : 1 - day);
   const monday = new Date(now);
   monday.setUTCDate(now.getUTCDate() + diffToMonday);

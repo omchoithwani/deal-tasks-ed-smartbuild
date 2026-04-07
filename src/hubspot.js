@@ -3,7 +3,7 @@ import { Client } from '@hubspot/api-client';
 const hubspot = new Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN });
 
 const PROPOSAL_PROPERTY = process.env.HUBSPOT_PROPOSAL_PROPERTY || 'proposal_submission_date';
-const OWNER_ID = process.env.HUBSPOT_OWNER_ID || '1517615118';
+const OWNER_IDS = (process.env.HUBSPOT_OWNER_ID || '1517615118').split(',').map((id) => id.trim());
 
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
@@ -81,8 +81,8 @@ export async function getTasksDueThisWeek() {
             },
             {
               propertyName: 'hubspot_owner_id',
-              operator: 'EQ',
-              value: OWNER_ID,
+              operator: 'IN',
+              values: OWNER_IDS,
             },
           ],
         },

@@ -148,6 +148,7 @@ export async function getDealDetails(dealId) {
       'dealname',
       'description',
       'amount',
+      'property_name',
       PROPOSAL_PROPERTY,
     ]),
   );

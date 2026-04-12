@@ -60,6 +60,7 @@ async function main() {
         dealname: dealProps.dealname,
         description: dealProps.description,
         amount: dealProps.amount,
+        propertyName: dealProps.property_name,
         proposalSubmitted: dealProps[PROPOSAL_PROPERTY],
       },
       notes,

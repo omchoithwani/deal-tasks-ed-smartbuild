@@ -156,6 +156,26 @@ export async function getDealDetails(dealId) {
 }
 
 /**
+ * Returns the name of the first company associated with a deal, or null.
+ */
+export async function getAssociatedCompany(dealId) {
+  try {
+    const assoc = await withRetry(() =>
+      hubspot.crm.associations.v4.basicApi.getPage('deals', dealId, 'companies'),
+    );
+    const companyId = (assoc.results ?? [])[0]?.toObjectId;
+    if (!companyId) return null;
+
+    const company = await withRetry(() =>
+      hubspot.crm.companies.basicApi.getById(companyId, ['name']),
+    );
+    return company.properties.name ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetch notes associated with a deal, sorted newest-first.
  * Returns the most recent note that contains "Ed's Note", or the most recent note overall.
  */

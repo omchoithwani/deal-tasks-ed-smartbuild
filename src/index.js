@@ -4,6 +4,7 @@ import {
   getTasksDueThisWeek,
   getAssociatedDealId,
   getDealDetails,
+  getAssociatedCompany,
   getRelevantNote,
 } from './hubspot.js';
 import { buildHtml, buildText } from './template.js';
@@ -35,8 +36,11 @@ async function main() {
       continue;
     }
 
-    const dealProps = await getDealDetails(dealId);
-    const notes = await getRelevantNote(dealId);
+    const [dealProps, companyName, notes] = await Promise.all([
+      getDealDetails(dealId),
+      getAssociatedCompany(dealId),
+      getRelevantNote(dealId),
+    ]);
 
     console.log(`  Deal: ${dealProps.dealname} (${dealId})`);
     if (notes.latestNote) {
@@ -58,6 +62,7 @@ async function main() {
       },
       deal: {
         dealname: dealProps.dealname,
+        companyName,
         description: dealProps.description,
         amount: dealProps.amount,
         propertyName: dealProps.property_name,

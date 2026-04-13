@@ -37,7 +37,7 @@ async function main() {
       continue;
     }
 
-    const [dealProps, { contactName, companyName }, notes] = await Promise.all([
+    const [dealProps, contactName, notes] = await Promise.all([
       getDealDetails(dealId),
       getAssociatedContact(dealId),
       getRelevantNote(dealId),
@@ -64,7 +64,7 @@ async function main() {
       deal: {
         dealname: dealProps.dealname,
         contactName,
-        companyName,
+        companyName: dealProps.account_company_name,
         description: dealProps.description,
         amount: dealProps.amount,
         proposalSubmitted: dealProps[PROPOSAL_PROPERTY],

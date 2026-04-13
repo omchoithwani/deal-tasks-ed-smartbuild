@@ -148,6 +148,7 @@ export async function getDealDetails(dealId) {
       'dealname',
       'description',
       'amount',
+      'account_company_name',
       PROPOSAL_PROPERTY,
     ]),
   );
@@ -155,45 +156,24 @@ export async function getDealDetails(dealId) {
 }
 
 /**
- * Returns the first contact associated with a deal, plus that contact's company name.
- * { contactName, companyName } — either field may be null.
+ * Returns the name of the first contact associated with a deal, or null.
  */
 export async function getAssociatedContact(dealId) {
   try {
-    // 1. Get contact associated with the deal
     const contactAssoc = await withRetry(() =>
       hubspot.crm.associations.v4.basicApi.getPage('deals', dealId, 'contacts'),
     );
     const contactId = (contactAssoc.results ?? [])[0]?.toObjectId;
-    if (!contactId) return { contactName: null, companyName: null };
+    if (!contactId) return null;
 
-    // 2. Fetch contact name + company in parallel
-    const [contact, companyAssoc] = await Promise.all([
-      withRetry(() =>
-        hubspot.crm.contacts.basicApi.getById(contactId, ['firstname', 'lastname']),
-      ),
-      withRetry(() =>
-        hubspot.crm.associations.v4.basicApi.getPage('contacts', contactId, 'companies'),
-      ),
-    ]);
-
+    const contact = await withRetry(() =>
+      hubspot.crm.contacts.basicApi.getById(contactId, ['firstname', 'lastname']),
+    );
     const firstName = contact.properties.firstname ?? '';
     const lastName = contact.properties.lastname ?? '';
-    const contactName = [firstName, lastName].filter(Boolean).join(' ') || null;
-
-    // 3. Get company name from the contact's associated company
-    const companyId = (companyAssoc.results ?? [])[0]?.toObjectId;
-    let companyName = null;
-    if (companyId) {
-      const company = await withRetry(() =>
-        hubspot.crm.companies.basicApi.getById(companyId, ['name']),
-      );
-      companyName = company.properties.name ?? null;
-    }
-
-    return { contactName, companyName };
+    return [firstName, lastName].filter(Boolean).join(' ') || null;
   } catch {
-    return { contactName: null, companyName: null };
+    return null;
   }
 }
 

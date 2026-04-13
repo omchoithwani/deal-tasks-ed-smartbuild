@@ -4,7 +4,7 @@ import {
   getTasksDueThisWeek,
   getAssociatedDealId,
   getDealDetails,
-  getAssociatedCompany,
+  getAssociatedContact,
   getRelevantNote,
   sleep,
 } from './hubspot.js';
@@ -37,9 +37,9 @@ async function main() {
       continue;
     }
 
-    const [dealProps, companyName, notes] = await Promise.all([
+    const [dealProps, { contactName, companyName }, notes] = await Promise.all([
       getDealDetails(dealId),
-      getAssociatedCompany(dealId),
+      getAssociatedContact(dealId),
       getRelevantNote(dealId),
     ]);
 
@@ -63,6 +63,7 @@ async function main() {
       },
       deal: {
         dealname: dealProps.dealname,
+        contactName,
         companyName,
         description: dealProps.description,
         amount: dealProps.amount,

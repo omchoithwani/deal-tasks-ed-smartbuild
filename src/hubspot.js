@@ -155,22 +155,45 @@ export async function getDealDetails(dealId) {
 }
 
 /**
- * Returns the name of the first company associated with a deal, or null.
+ * Returns the first contact associated with a deal, plus that contact's company name.
+ * { contactName, companyName } — either field may be null.
  */
-export async function getAssociatedCompany(dealId) {
+export async function getAssociatedContact(dealId) {
   try {
-    const assoc = await withRetry(() =>
-      hubspot.crm.associations.v4.basicApi.getPage('deals', dealId, 'companies'),
+    // 1. Get contact associated with the deal
+    const contactAssoc = await withRetry(() =>
+      hubspot.crm.associations.v4.basicApi.getPage('deals', dealId, 'contacts'),
     );
-    const companyId = (assoc.results ?? [])[0]?.toObjectId;
-    if (!companyId) return null;
+    const contactId = (contactAssoc.results ?? [])[0]?.toObjectId;
+    if (!contactId) return { contactName: null, companyName: null };
 
-    const company = await withRetry(() =>
-      hubspot.crm.companies.basicApi.getById(companyId, ['name']),
-    );
-    return company.properties.name ?? null;
+    // 2. Fetch contact name + company in parallel
+    const [contact, companyAssoc] = await Promise.all([
+      withRetry(() =>
+        hubspot.crm.contacts.basicApi.getById(contactId, ['firstname', 'lastname']),
+      ),
+      withRetry(() =>
+        hubspot.crm.associations.v4.basicApi.getPage('contacts', contactId, 'companies'),
+      ),
+    ]);
+
+    const firstName = contact.properties.firstname ?? '';
+    const lastName = contact.properties.lastname ?? '';
+    const contactName = [firstName, lastName].filter(Boolean).join(' ') || null;
+
+    // 3. Get company name from the contact's associated company
+    const companyId = (companyAssoc.results ?? [])[0]?.toObjectId;
+    let companyName = null;
+    if (companyId) {
+      const company = await withRetry(() =>
+        hubspot.crm.companies.basicApi.getById(companyId, ['name']),
+      );
+      companyName = company.properties.name ?? null;
+    }
+
+    return { contactName, companyName };
   } catch {
-    return null;
+    return { contactName: null, companyName: null };
   }
 }
 

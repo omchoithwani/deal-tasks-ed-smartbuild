@@ -42,7 +42,6 @@ export function buildText(taskRecords, weekLabel) {
     lines.push('─'.repeat(40));
     lines.push(`Deal Name:          ${deal.dealname ?? 'N/A'}`);
     lines.push(`Company:            ${deal.companyName ?? 'N/A'}`);
-    lines.push(`Property Name:      ${deal.propertyName ?? 'N/A'}`);
     lines.push(`Deal Description:   ${deal.description ?? 'N/A'}`);
     lines.push(`Amount:             ${formatAmount(deal.amount)}`);
     lines.push(`Proposal Submitted: ${formatDate(deal.proposalSubmitted)}`);
@@ -81,10 +80,6 @@ export function buildHtml(taskRecords, weekLabel) {
             <td style="padding:6px 0;">${deal.companyName ?? 'N/A'}</td>
           </tr>
           <tr>
-            <td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap;vertical-align:top;">Property Name</td>
-            <td style="padding:6px 0;">${deal.propertyName ?? 'N/A'}</td>
-          </tr>
-          <tr style="background:#fafafa;">
             <td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap;vertical-align:top;">Deal Description</td>
             <td style="padding:6px 0;">${deal.description ?? 'N/A'}</td>
           </tr>

@@ -5,7 +5,7 @@ const hubspot = new Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN });
 const PROPOSAL_PROPERTY = process.env.HUBSPOT_PROPOSAL_PROPERTY || 'proposal_submission_date';
 const OWNER_IDS = (process.env.HUBSPOT_OWNER_ID || '1517615118').split(',').map((id) => id.trim());
 
-const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+export const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 /**
  * Retry a HubSpot API call on transient errors (502, 503, 429) with exponential backoff.
@@ -148,7 +148,6 @@ export async function getDealDetails(dealId) {
       'dealname',
       'description',
       'amount',
-      'property_name',
       PROPOSAL_PROPERTY,
     ]),
   );

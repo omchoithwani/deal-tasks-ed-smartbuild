@@ -6,6 +6,7 @@ import {
   getDealDetails,
   getAssociatedCompany,
   getRelevantNote,
+  sleep,
 } from './hubspot.js';
 import { buildHtml, buildText } from './template.js';
 import { sendDigest } from './email.js';
@@ -65,11 +66,14 @@ async function main() {
         companyName,
         description: dealProps.description,
         amount: dealProps.amount,
-        propertyName: dealProps.property_name,
         proposalSubmitted: dealProps[PROPOSAL_PROPERTY],
       },
       notes,
     });
+
+    // Proactive rate-limit buffer: ~6 API calls per task, 300ms gap keeps us
+    // well under HubSpot's 100 requests/10s limit.
+    await sleep(300);
   }
 
   if (taskRecords.length === 0) {

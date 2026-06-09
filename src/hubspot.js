@@ -25,11 +25,14 @@ async function withRetry(fn, retries = 4, delayMs = 1000) {
   }
 }
 
-// Week-start uses UTC midnight so tasks stored as "June 8 00:00 UTC" (e.g. from IST
-// account timezone) are not shifted to the previous EDT day and dropped from the range.
-function utcDayStart(dateStr) {
+function easternDayStart(dateStr) {
   const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  const noon = new Date(Date.UTC(year, month - 1, day, 12));
+  const easternHour = parseInt(
+    new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(noon),
+  );
+  const offsetHours = 12 - easternHour; // 4 for EDT, 5 for EST
+  return new Date(Date.UTC(year, month - 1, day, offsetHours, 0, 0, 0));
 }
 
 function easternDayEnd(dateStr) {
@@ -49,7 +52,7 @@ function easternDayEnd(dateStr) {
 export function getWeekRange() {
   if (process.env.DATE_FROM && process.env.DATE_TO) {
     return {
-      start: utcDayStart(process.env.DATE_FROM),
+      start: easternDayStart(process.env.DATE_FROM),
       end: easternDayEnd(process.env.DATE_TO),
     };
   }
@@ -65,7 +68,7 @@ export function getWeekRange() {
   const sundayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
     .format(new Date(Date.UTC(y, m - 1, d + diffToMonday + 13, 12)));
 
-  return { start: utcDayStart(mondayStr), end: easternDayEnd(sundayStr) };
+  return { start: easternDayStart(mondayStr), end: easternDayEnd(sundayStr) };
 }
 
 /**

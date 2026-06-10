@@ -25,35 +25,28 @@ async function withRetry(fn, retries = 4, delayMs = 1000) {
   }
 }
 
-function easternDayStart(dateStr) {
+// HubSpot stores hs_timestamp as UTC midnight on the due date (e.g. 2026-06-15T00:00:00Z).
+// Using UTC boundaries ensures those timestamps land inside the range rather than
+// 4–5 hours before Eastern midnight and getting excluded.
+function utcDayStart(dateStr) {
   const [year, month, day] = dateStr.split('-').map(Number);
-  const noon = new Date(Date.UTC(year, month - 1, day, 12));
-  const easternHour = parseInt(
-    new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(noon),
-  );
-  const offsetHours = 12 - easternHour; // 4 for EDT, 5 for EST
-  return new Date(Date.UTC(year, month - 1, day, offsetHours, 0, 0, 0));
+  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 }
 
-function easternDayEnd(dateStr) {
+function utcDayEnd(dateStr) {
   const [year, month, day] = dateStr.split('-').map(Number);
-  const noon = new Date(Date.UTC(year, month - 1, day, 12));
-  const easternHour = parseInt(
-    new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(noon),
-  );
-  const offsetHours = 12 - easternHour;
-  return new Date(Date.UTC(year, month - 1, day + 1, offsetHours, 0, 0, 0) - 1);
+  return new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 }
 
 /**
- * Returns the date range to query tasks for in Eastern time.
- * Uses DATE_FROM / DATE_TO env vars if provided, otherwise defaults to the current week.
+ * Returns the date range to query tasks for.
+ * Uses DATE_FROM / DATE_TO env vars if provided, otherwise defaults to next week.
  */
 export function getWeekRange() {
   if (process.env.DATE_FROM && process.env.DATE_TO) {
     return {
-      start: easternDayStart(process.env.DATE_FROM),
-      end: easternDayEnd(process.env.DATE_TO),
+      start: utcDayStart(process.env.DATE_FROM),
+      end: utcDayEnd(process.env.DATE_TO),
     };
   }
 
@@ -70,7 +63,7 @@ export function getWeekRange() {
   const sundayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
     .format(new Date(Date.UTC(y, m - 1, d + daysToMonday + 6, 12)));
 
-  return { start: easternDayStart(mondayStr), end: easternDayEnd(sundayStr) };
+  return { start: utcDayStart(mondayStr), end: utcDayEnd(sundayStr) };
 }
 
 /**

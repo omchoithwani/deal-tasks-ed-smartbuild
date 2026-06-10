@@ -46,7 +46,8 @@ export function buildText(taskRecords, weekLabel) {
     lines.push(`Deal Description:   ${deal.description ?? 'N/A'}`);
     lines.push(`Amount:             ${formatAmount(deal.amount)}`);
     lines.push(`Proposal Submitted: ${formatDate(deal.proposalSubmitted)}`);
-    lines.push(`Task Name:          ${task.subject ?? 'N/A'}`);
+    lines.push(`Task Name:          ${task.subject ?? 'N/A'}${task.url ? ` — ${task.url}` : ''}`);
+    lines.push(`Due Date:           ${formatDate(task.dueDate)}`);
     lines.push(`Latest Note (${latestDate ?? 'N/A'}${latestBy ? `, ${latestBy}` : ''}): ${latestBody || 'No notes found'}`);
     lines.push(`Ed's Note (${edDate ?? 'N/A'}${edBy ? `, ${edBy}` : ''}):    ${edBody || 'None found'}`);
     lines.push('');
@@ -98,7 +99,11 @@ export function buildHtml(taskRecords, weekLabel) {
           </tr>
           <tr>
             <td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap;vertical-align:top;">Task Name</td>
-            <td style="padding:6px 0;">${task.subject ?? 'N/A'}</td>
+            <td style="padding:6px 0;">${task.url ? `<a href="${task.url}" style="color:#0066cc;text-decoration:none;">${task.subject ?? 'N/A'}</a>` : (task.subject ?? 'N/A')}</td>
+          </tr>
+          <tr style="background:#fafafa;">
+            <td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap;vertical-align:top;">Due Date</td>
+            <td style="padding:6px 0;">${formatDate(task.dueDate)}</td>
           </tr>
           <tr style="background:#fafafa;">
             <td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap;vertical-align:top;color:#555;">Latest Note</td>

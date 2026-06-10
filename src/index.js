@@ -60,6 +60,7 @@ async function main() {
         subject: task.properties.hs_task_subject,
         status: task.properties.hs_task_status,
         dueDate: task.properties.hs_timestamp,
+        url: task.url ?? null,
       },
       deal: {
         dealname: dealProps.dealname,

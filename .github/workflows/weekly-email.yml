@@ -34,11 +34,13 @@ jobs:
           [ -n "$FROM_EMAIL" ] && echo "FROM_EMAIL: set" || echo "FROM_EMAIL: MISSING"
           [ -n "$RECIPIENT_EMAILS" ] && echo "RECIPIENT_EMAILS: set" || echo "RECIPIENT_EMAILS: MISSING"
           [ -n "$HUBSPOT_ACCESS_TOKEN" ] && echo "HUBSPOT_ACCESS_TOKEN: set" || echo "HUBSPOT_ACCESS_TOKEN: MISSING"
+          [ -n "$HUBSPOT_PORTAL_ID" ] && echo "HUBSPOT_PORTAL_ID: set" || echo "HUBSPOT_PORTAL_ID: MISSING"
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
           RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
           HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
+          HUBSPOT_PORTAL_ID: ${{ secrets.HUBSPOT_PORTAL_ID }}
 
       - name: Send weekly task digest
         run: node src/index.js
@@ -49,5 +51,6 @@ jobs:
           RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
           HUBSPOT_PROPOSAL_PROPERTY: proposal_submission_date
           HUBSPOT_OWNER_ID: ${{ secrets.HUBSPOT_OWNER_ID }}
+          HUBSPOT_PORTAL_ID: ${{ secrets.HUBSPOT_PORTAL_ID }}
           DATE_FROM: ${{ github.event.inputs.date_from }}
           DATE_TO: ${{ github.event.inputs.date_to }}

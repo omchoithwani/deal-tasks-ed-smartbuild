@@ -12,6 +12,7 @@ import { buildHtml, buildText } from './template.js';
 import { sendDigest } from './email.js';
 
 const PROPOSAL_PROPERTY = process.env.HUBSPOT_PROPOSAL_PROPERTY || 'proposal_submission_date';
+const PORTAL_ID = process.env.HUBSPOT_PORTAL_ID;
 
 function dateLabel(d) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
@@ -60,7 +61,7 @@ async function main() {
         subject: task.properties.hs_task_subject,
         status: task.properties.hs_task_status,
         dueDate: task.properties.hs_timestamp,
-        url: task.url ?? null,
+        url: PORTAL_ID ? `https://app.hubspot.com/tasks/${PORTAL_ID}/view/all/task/${task.id}` : null,
       },
       deal: {
         dealname: dealProps.dealname,

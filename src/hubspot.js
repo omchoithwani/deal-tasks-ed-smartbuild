@@ -57,16 +57,18 @@ export function getWeekRange() {
     };
   }
 
-  // Get today's date string in Eastern time (en-CA = YYYY-MM-DD format)
   const todayEastern = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
   const [y, m, d] = todayEastern.split('-').map(Number);
-  const dow = new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay(); // day of week (noon UTC = same day Eastern)
-  const diffToMonday = (dow === 0 ? -6 : 1 - dow);
+  const dow = new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay(); // 0=Sun … 6=Sat
+
+  // On Monday (dow=1) the digest window opened today — the Friday email covers Mon–Sun
+  // of the week that started today. Any other day, find the coming Friday then +3 days.
+  const daysToMonday = dow === 1 ? 0 : (5 - dow + 7) % 7 + 3;
 
   const mondayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
-    .format(new Date(Date.UTC(y, m - 1, d + diffToMonday + 7, 12)));
+    .format(new Date(Date.UTC(y, m - 1, d + daysToMonday, 12)));
   const sundayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
-    .format(new Date(Date.UTC(y, m - 1, d + diffToMonday + 13, 12)));
+    .format(new Date(Date.UTC(y, m - 1, d + daysToMonday + 6, 12)));
 
   return { start: easternDayStart(mondayStr), end: easternDayEnd(sundayStr) };
 }
